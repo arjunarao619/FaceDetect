@@ -102,16 +102,11 @@ public class DetectActivity extends AppCompatActivity {
                     float y1 = thisFace.getPosition().y;
                     float x2 = x1 + thisFace.getWidth();
                     float y2 = y1 + thisFace.getHeight();
-
                     //for POST
                     float xpos = x1;
                     float ypos = y1;
                     float width = x2;
                     float height = y2;
-
-
-
-
 
 
 
