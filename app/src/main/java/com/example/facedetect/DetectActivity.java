@@ -1,8 +1,10 @@
 package com.example.facedetect;
 
 
+import android.content.DialogInterface;
 import android.content.Intent;
 
+import android.graphics.PointF;
 import android.media.Image;
 import android.os.AsyncTask;
 import android.os.Bundle;
@@ -18,6 +20,8 @@ import android.graphics.drawable.BitmapDrawable;
 import android.os.Bundle;
 import android.provider.MediaStore;
 import android.util.SparseArray;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ImageView;
@@ -38,6 +42,7 @@ import android.util.SparseArray;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ImageView;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.google.android.gms.vision.Frame;
@@ -46,14 +51,20 @@ import com.google.android.gms.vision.face.FaceDetector;
 import com.google.android.gms.vision.face.FaceDetector;
 import com.mindorks.paracamera.Camera;
 
+import org.json.JSONObject;
+
 import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.concurrent.ExecutionException;
 
+import static com.google.android.gms.vision.face.FaceDetector.ALL_CLASSIFICATIONS;
+import static com.google.android.gms.vision.face.FaceDetector.FAST_MODE;
+
 public class DetectActivity extends AppCompatActivity {
 
     Camera camera;
+    float xpos,ypos,width,height;
 
 
     static final int REQUEST_IMAGE_CAPTURE = 1;
@@ -120,17 +131,6 @@ public class DetectActivity extends AppCompatActivity {
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        /*if (requestCode == REQUEST_IMAGE_CAPTURE && resultCode == RESULT_OK) {
-
-            Bundle extras = data.getExtras();
-            Bitmap imageBitmap = (Bitmap) extras.get("data");
-
-
-            imageView.setImageBitmap(imageBitmap);
-
-            //FACE DETECTION
-
-        }*/
 
         if(requestCode == Camera.REQUEST_TAKE_PHOTO){
             Bitmap myBitmap = camera.getCameraBitmap();
@@ -149,13 +149,12 @@ public class DetectActivity extends AppCompatActivity {
                 tempCanvas.drawBitmap(myBitmap, 0, 0, null);
 
                 FaceDetector faceDetector = new
-                        FaceDetector.Builder(getApplicationContext()).setTrackingEnabled(false)
+                        FaceDetector.Builder(getApplicationContext()).setTrackingEnabled(true).setClassificationType(ALL_CLASSIFICATIONS)
+                        .setMode(FAST_MODE)
                         .build();
                 if(!faceDetector.isOperational()){
                     return;
                 }
-
-
 
 
                 Frame frame = new Frame.Builder().setBitmap(myBitmap).build();
@@ -167,13 +166,24 @@ public class DetectActivity extends AppCompatActivity {
                     float y1 = thisFace.getPosition().y;
                     float x2 = x1 + thisFace.getWidth();
                     float y2 = y1 + thisFace.getHeight();
+                    float smile = thisFace.getIsSmilingProbability();
+                    float lefteye = thisFace.getIsLeftEyeOpenProbability();
+                    float righteye = thisFace.getIsRightEyeOpenProbability();
+
+
+                    TextView textView = findViewById(R.id.details);
+                    String details = "Smiling Probability: "+ smile + "\n   Right Eye Open Probability "+ righteye + "\n    Left Eye Open Probability: "+ lefteye;
+                    textView.setText(details);
+
                     //for POST
-                    float xpos = x1;
-                    float ypos = y1;
-                    float width = x2;
-                    float height = y2;
+                     xpos = x1;
+                     ypos = y1;
+                     width = x2;
+                     height = y2;
 
                     tempCanvas.drawRoundRect(new RectF(x1, y1, x2, y2), 2, 2, myRectPaint);
+
+
                 }
                 imageView2.setImageDrawable(new BitmapDrawable(getResources(),tempBitmap));
             //end of detection process
@@ -184,4 +194,42 @@ public class DetectActivity extends AppCompatActivity {
             }
         }
     }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.menudetect, menu);
+        return super.onCreateOptionsMenu(menu);
+    }
+
+    // handle button activities
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        int id = item.getItemId();
+
+        if (id == R.id.send) {
+
+            AlertDialog.Builder builder = new AlertDialog.Builder(this);
+            builder.setTitle("POST Details");
+            // set the custom layout
+            final View customLayout = getLayoutInflater().inflate(R.layout.detailsdialog, null);
+            builder.setView(customLayout);
+
+            builder.setPositiveButton("SEND", new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialogInterface, int i) {
+                    //TODO SEND JSON POST REQUEST
+                }
+            }).setNegativeButton("CANCEL", new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialogInterface, int i) {
+                    dialogInterface.dismiss();
+                }
+            });
+
+            builder.show();
+            
+        }
+        return super.onOptionsItemSelected(item);
+    }
+
 }

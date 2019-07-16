@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent" android:layout_height="match_parent"
+    android:orientation="vertical">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+
+        android:orientation="vertical">
+
+        <EditText
+            android:id="@+id/personname"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Person Name"
+            android:paddingTop="30dp" />
+
+        <EditText
+            android:id="@+id/personid"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Person ID"
+            android:paddingTop="30dp" />
+
+        <EditText
+            android:id="@+id/photoname"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Photo Name"
+            android:paddingTop="30dp" />
+
+        <EditText
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Photo URL"
+            android:text="http://192.168.7.115/api/v1/showface/image/"
+            android:paddingTop="30dp" />
+
+
+    </LinearLayout>
+
+
+
+
+
+</LinearLayout>
