@@ -4,14 +4,12 @@ package com.example.facedetect;
 import android.content.DialogInterface;
 import android.content.Intent;
 
-import android.graphics.PointF;
-import android.media.Image;
-import android.os.AsyncTask;
+
 import android.os.Bundle;
-import android.app.Activity;
+
 import android.app.AlertDialog;
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
+
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
@@ -19,45 +17,35 @@ import android.graphics.RectF;
 import android.graphics.drawable.BitmapDrawable;
 import android.os.Bundle;
 import android.provider.MediaStore;
+import android.util.Log;
 import android.util.SparseArray;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.ImageView;
 
 import androidx.appcompat.app.AppCompatActivity;
-
-import android.app.Activity;
-import android.app.AlertDialog;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
-import android.graphics.Canvas;
-import android.graphics.Color;
-import android.graphics.Paint;
-import android.graphics.RectF;
-import android.graphics.drawable.BitmapDrawable;
-import android.os.Bundle;
-import android.util.SparseArray;
-import android.view.View;
-import android.widget.Button;
-import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import com.google.android.gms.vision.Frame;
 import com.google.android.gms.vision.face.Face;
 import com.google.android.gms.vision.face.FaceDetector;
-import com.google.android.gms.vision.face.FaceDetector;
 import com.mindorks.paracamera.Camera;
 
+import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.concurrent.ExecutionException;
 
+import static com.google.android.gms.vision.face.FaceDetector.ACCURATE_MODE;
 import static com.google.android.gms.vision.face.FaceDetector.ALL_CLASSIFICATIONS;
 import static com.google.android.gms.vision.face.FaceDetector.FAST_MODE;
 
@@ -65,6 +53,7 @@ public class DetectActivity extends AppCompatActivity {
 
     Camera camera;
     float xpos,ypos,width,height;
+
 
 
     static final int REQUEST_IMAGE_CAPTURE = 1;
@@ -102,32 +91,12 @@ public class DetectActivity extends AppCompatActivity {
                     e.printStackTrace();
                 }
 
-
-
-                /*BitmapFactory.Options options = new BitmapFactory.Options();
-                options.inMutable=true;
-                Bitmap myBitmap = BitmapFactory.decodeResource(
-                        getApplicationContext().getResources(),
-                        R.drawable.test,
-                        options);*/
-
-
-
-
-
-
             }
         });
 
     }
 
-    private void dispatchTakePictureIntent() {
-        Intent takePictureIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
-        if (takePictureIntent.resolveActivity(getPackageManager()) != null) {
-            startActivityForResult(takePictureIntent, REQUEST_IMAGE_CAPTURE);
 
-        }
-    }
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
@@ -150,7 +119,7 @@ public class DetectActivity extends AppCompatActivity {
 
                 FaceDetector faceDetector = new
                         FaceDetector.Builder(getApplicationContext()).setTrackingEnabled(true).setClassificationType(ALL_CLASSIFICATIONS)
-                        .setMode(FAST_MODE)
+                        .setMode(ACCURATE_MODE)
                         .build();
                 if(!faceDetector.isOperational()){
                     return;
@@ -217,7 +186,92 @@ public class DetectActivity extends AppCompatActivity {
             builder.setPositiveButton("SEND", new DialogInterface.OnClickListener() {
                 @Override
                 public void onClick(DialogInterface dialogInterface, int i) {
+                    EditText personname = customLayout.findViewById(R.id.personname);
+                    EditText personid = customLayout.findViewById(R.id.personid);
+                    EditText photoname = customLayout.findViewById(R.id.photoname);
+                    EditText photourl = customLayout.findViewById(R.id.photourl);
                     //TODO SEND JSON POST REQUEST
+
+                    JSONObject json = new JSONObject();
+                    try{
+
+
+                        json.put("person_name",personname.getText().toString());
+                        json.put("person_id",personid.getText().toString());
+                        json.put("photo_name",photoname.getText().toString());
+                        json.put("photo_url",photourl.getText().toString());
+                    }catch(JSONException e){
+                        e.printStackTrace();
+                    }
+
+                    JSONObject rectangle_vector = new JSONObject();
+                    try{
+                        rectangle_vector.put("x",xpos);
+                        rectangle_vector.put("y",ypos);
+                        rectangle_vector.put("width",width);
+                        rectangle_vector.put("height",height);
+                        json.put("rectangle_vector",rectangle_vector);
+
+                    }catch (JSONException e){
+                        e.printStackTrace();
+                    }
+
+
+
+                    JSONObject face_contour = new JSONObject();
+                    try{
+                        face_contour.put("x",0.0);
+                        face_contour.put("y",0.0);
+                    }catch (JSONException e){
+                        e.printStackTrace();
+                    }
+
+                    JSONObject face_contour2 = new JSONObject();
+                    try{
+                        face_contour2.put("x",0.0);
+                        face_contour2.put("y",0.0);
+                    }catch (JSONException e){
+                        e.printStackTrace();
+                    }
+
+                    JSONArray faceContour = new JSONArray();
+                    faceContour.put(face_contour);
+                    faceContour.put(face_contour2);
+
+
+                    /*JSONObject facecontour = new JSONObject();
+                    try{
+                    facecontour.put("face_contour",faceContour);}
+                    catch (JSONException e){
+                        e.printStackTrace();
+                    }*/
+
+                    JSONObject landmark_vector = new JSONObject();
+                    try{
+
+
+                        landmark_vector.put("face_contour",faceContour);
+                        landmark_vector.put("outer_lips",new JSONArray());
+                        landmark_vector.put("inner_lips",new JSONArray());
+                        landmark_vector.put("left_eye",new JSONArray());
+                        landmark_vector.put("right_eye",new JSONArray());
+                        landmark_vector.put("left_pupil",new JSONArray());
+                        landmark_vector.put("right_pupil",new JSONArray());
+                        landmark_vector.put("left_eyebrow",new JSONArray());
+                        landmark_vector.put("right_eyebrow",new JSONArray());
+                        landmark_vector.put("nose",new JSONArray());
+                        landmark_vector.put("nose_crest",new JSONArray());
+                        landmark_vector.put("median_line",new JSONArray());
+
+                        json.put("landmark_vector",landmark_vector);
+
+                    }catch(JSONException e){
+                        e.printStackTrace();
+                    }
+
+                    sendPost(json);
+
+
                 }
             }).setNegativeButton("CANCEL", new DialogInterface.OnClickListener() {
                 @Override
@@ -227,9 +281,49 @@ public class DetectActivity extends AppCompatActivity {
             });
 
             builder.show();
-            
+
         }
         return super.onOptionsItemSelected(item);
+    }
+
+
+
+    public void sendPost(final JSONObject json) {
+
+        Thread thread = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    String urlAddress = "http://192.168.7.115/api/v1/uploadface/profile/exampleman";
+                    URL url = new URL(urlAddress);
+                    HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+                    conn.setRequestMethod("POST");
+                    conn.setRequestProperty("Content-Type", "application/json;charset=UTF-8");
+                    conn.setRequestProperty("Accept","application/json");
+                    conn.setDoOutput(true);
+                    conn.setDoInput(true);
+
+
+
+                    Log.i("JSON", json.toString());
+                    DataOutputStream os = new DataOutputStream(conn.getOutputStream());
+                    //os.writeBytes(URLEncoder.encode(jsonParam.toString(), "UTF-8"));
+                    os.writeBytes(json.toString());
+
+                    os.flush();
+                    os.close();
+
+                    Log.i("STATUS", String.valueOf(conn.getResponseCode()));
+                    Log.i("MSG" , conn.getResponseMessage());
+
+                    conn.disconnect();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        });
+
+        thread.start();
     }
 
 }

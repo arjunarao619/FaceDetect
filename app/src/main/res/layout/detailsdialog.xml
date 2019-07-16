@@ -34,6 +34,7 @@
         <EditText
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:id = "@+id/photourl"
             android:hint="Photo URL"
             android:text="http://192.168.7.115/api/v1/showface/image/"
             android:paddingTop="30dp" />
