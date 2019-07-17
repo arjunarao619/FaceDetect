@@ -31,7 +31,10 @@ dependencies {
     androidTestImplementation 'androidx.test:runner:1.2.0'
     implementation 'com.google.android.gms:play-services:7.8+'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.2.0'
-    implementation 'com.mindorks:paracamera:0.2.2'
+
+
+
+
 
 
 }

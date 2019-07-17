@@ -56,6 +56,7 @@ public class DetectActivity extends AppCompatActivity {
     EditText photoname;
 
 
+
     static final int REQUEST_IMAGE_CAPTURE = 1;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -187,7 +188,6 @@ public class DetectActivity extends AppCompatActivity {
                 @Override
                 public void onClick(DialogInterface dialogInterface, int i) {
                     EditText personname = customLayout.findViewById(R.id.personname);
-                    EditText personid = customLayout.findViewById(R.id.personid);
                     photoname = customLayout.findViewById(R.id.photoname);
                     EditText photourl = customLayout.findViewById(R.id.photourl);
                     //TODO SEND JSON POST REQUEST
@@ -197,7 +197,7 @@ public class DetectActivity extends AppCompatActivity {
 
 
                         json.put("person_name",personname.getText().toString());
-                        json.put("person_id",personid.getText().toString());
+                       // json.put("person_id",personid.getText().toString());
                         json.put("photo_name",photoname.getText().toString());
                         json.put("photo_url",photourl.getText().toString());
                     }catch(JSONException e){

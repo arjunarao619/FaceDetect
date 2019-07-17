@@ -8,6 +8,7 @@
 
     <ImageView
         android:id="@+id/test"
+
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_above="@+id/btn"
@@ -15,6 +16,8 @@
         android:layout_marginBottom="150dp"
         android:src = "@drawable/test"
          />
+
+
 
     <TextView
         android:layout_width="match_parent"
