@@ -63,12 +63,6 @@ public class DetectActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_detect);
         Button btn = (Button) findViewById(R.id.btn);
-       // dispatchTakePictureIntent();
-
-
-        //Face Detection API
-
-
 
         btn.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -93,9 +87,7 @@ public class DetectActivity extends AppCompatActivity {
                 }
 
             }
-        });
-
-    }
+        }); }
 
 
 
@@ -190,6 +182,7 @@ public class DetectActivity extends AppCompatActivity {
                     EditText personname = customLayout.findViewById(R.id.personname);
                     photoname = customLayout.findViewById(R.id.photoname);
                     EditText photourl = customLayout.findViewById(R.id.photourl);
+                    EditText personid = customLayout.findViewById(R.id.personid);
                     //TODO SEND JSON POST REQUEST
 
                     JSONObject json = new JSONObject();
@@ -197,7 +190,7 @@ public class DetectActivity extends AppCompatActivity {
 
 
                         json.put("person_name",personname.getText().toString());
-                       // json.put("person_id",personid.getText().toString());
+                        json.put("person_id",personid.getText().toString());
                         json.put("photo_name",photoname.getText().toString());
                         json.put("photo_url",photourl.getText().toString());
                     }catch(JSONException e){

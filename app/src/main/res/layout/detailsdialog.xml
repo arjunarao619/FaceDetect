@@ -16,6 +16,12 @@
             android:layout_height="wrap_content"
             android:hint="Person Name"
             android:paddingTop="30dp" />
+        <EditText
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Person ID"
+            android:paddingTop="30dp"
+            android:id = "@+id/personid"/>
 
 
 
