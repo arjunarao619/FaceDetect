@@ -319,4 +319,6 @@ public class DetectActivity extends AppCompatActivity {
         thread.start();
     }
 
+
+
 }
