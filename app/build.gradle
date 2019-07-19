@@ -32,6 +32,8 @@ dependencies {
     implementation 'com.google.android.gms:play-services:7.8+'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.2.0'
     implementation 'com.mindorks:paracamera:0.2.2'
+    implementation 'org.apache.httpcomponents:httpcore:4.4.10'
+    implementation 'org.apache.httpcomponents:httpmime:4.5.6'
 
 
 
