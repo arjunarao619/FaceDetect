@@ -53,6 +53,7 @@ public class DetectActivity extends AppCompatActivity {
 
     Camera camera;
     float xpos,ypos,width,height;
+    EditText photoname;
 
 
 
@@ -62,12 +63,6 @@ public class DetectActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_detect);
         Button btn = (Button) findViewById(R.id.btn);
-       // dispatchTakePictureIntent();
-
-
-        //Face Detection API
-
-
 
         btn.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -92,9 +87,7 @@ public class DetectActivity extends AppCompatActivity {
                 }
 
             }
-        });
-
-    }
+        }); }
 
 
 
@@ -187,9 +180,9 @@ public class DetectActivity extends AppCompatActivity {
                 @Override
                 public void onClick(DialogInterface dialogInterface, int i) {
                     EditText personname = customLayout.findViewById(R.id.personname);
-                    EditText personid = customLayout.findViewById(R.id.personid);
-                    EditText photoname = customLayout.findViewById(R.id.photoname);
+                    photoname = customLayout.findViewById(R.id.photoname);
                     EditText photourl = customLayout.findViewById(R.id.photourl);
+                    EditText personid = customLayout.findViewById(R.id.personid);
                     //TODO SEND JSON POST REQUEST
 
                     JSONObject json = new JSONObject();
@@ -294,7 +287,7 @@ public class DetectActivity extends AppCompatActivity {
             @Override
             public void run() {
                 try {
-                    String urlAddress = "http://192.168.7.115/api/v1/uploadface/profile/exampleman";
+                    String urlAddress = "http://192.168.7.115/api/v1/uploadface/profile/" + photoname.getText().toString();
                     URL url = new URL(urlAddress);
                     HttpURLConnection conn = (HttpURLConnection) url.openConnection();
                     conn.setRequestMethod("POST");
@@ -325,5 +318,7 @@ public class DetectActivity extends AppCompatActivity {
 
         thread.start();
     }
+
+
 
 }
