@@ -1,10 +1,13 @@
 package com.example.facedetect;
 
 
+import android.content.Context;
+import android.content.ContextWrapper;
 import android.content.DialogInterface;
 import android.content.Intent;
 
 
+import android.graphics.BitmapFactory;
 import android.os.Bundle;
 
 import android.app.AlertDialog;
@@ -39,10 +42,19 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.BufferedReader;
 import java.io.DataOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
 import java.util.concurrent.ExecutionException;
 
 import static com.google.android.gms.vision.face.FaceDetector.ACCURATE_MODE;
@@ -53,8 +65,8 @@ public class DetectActivity extends AppCompatActivity {
 
     Camera camera;
     float xpos,ypos,width,height;
-    EditText photoname;
-
+    EditText personid;
+    String savedImagePath;
 
 
     static final int REQUEST_IMAGE_CAPTURE = 1;
@@ -96,6 +108,13 @@ public class DetectActivity extends AppCompatActivity {
 
         if(requestCode == Camera.REQUEST_TAKE_PHOTO){
             Bitmap myBitmap = camera.getCameraBitmap();
+            Bitmap uploadImage = myBitmap;
+
+            savedImagePath = saveToInternalStorage(uploadImage);
+            Toast.makeText(DetectActivity.this,savedImagePath,Toast.LENGTH_LONG).show();
+
+
+
             if(myBitmap != null) {
 
                 final ImageView imageView2 = (ImageView) findViewById(R.id.test);
@@ -154,6 +173,8 @@ public class DetectActivity extends AppCompatActivity {
             }else{
                 Toast.makeText(this.getApplicationContext(),"Picture not taken!", Toast.LENGTH_SHORT).show();
             }
+            //TODO CALL POST FOR IMAGE TO BACKEND
+
         }
     }
 
@@ -180,10 +201,10 @@ public class DetectActivity extends AppCompatActivity {
                 @Override
                 public void onClick(DialogInterface dialogInterface, int i) {
                     EditText personname = customLayout.findViewById(R.id.personname);
-                    photoname = customLayout.findViewById(R.id.photoname);
-                    EditText photourl = customLayout.findViewById(R.id.photourl);
-                    EditText personid = customLayout.findViewById(R.id.personid);
-                    //TODO SEND JSON POST REQUEST
+                    //photoname = customLayout.findViewById(R.id.photoname);
+                    //EditText photourl = customLayout.findViewById(R.id.photourl);
+                    personid = customLayout.findViewById(R.id.personid);
+
 
                     JSONObject json = new JSONObject();
                     try{
@@ -191,8 +212,8 @@ public class DetectActivity extends AppCompatActivity {
 
                         json.put("person_name",personname.getText().toString());
                         json.put("person_id",personid.getText().toString());
-                        json.put("photo_name",photoname.getText().toString());
-                        json.put("photo_url",photourl.getText().toString());
+                        json.put("photo_name",personid.getText().toString());
+                        json.put("photo_url","http://192.168.7.115/api/v1/showface/image/" + personid.getText().toString());
                     }catch(JSONException e){
                         e.printStackTrace();
                     }
@@ -264,6 +285,17 @@ public class DetectActivity extends AppCompatActivity {
 
                     sendPost(json);
 
+                    //SENDING IMAGE TO BACKEND
+                    Map<String, String> params = new HashMap<String, String>(2);
+                    params.put("foo", "abc");
+                    params.put("bar", "def");
+                    try{
+                        String result = multipartRequest("http://192.168.7.115/api/v1/uploadface/profile/" + personid.getText().toString(), params, savedImagePath, "photo", "photo/jpg");
+                        Toast.makeText(DetectActivity.this,result,Toast.LENGTH_LONG).show();
+                    }catch(Exception e){
+                        e.printStackTrace();
+                    }
+
 
                 }
             }).setNegativeButton("CANCEL", new DialogInterface.OnClickListener() {
@@ -287,7 +319,7 @@ public class DetectActivity extends AppCompatActivity {
             @Override
             public void run() {
                 try {
-                    String urlAddress = "http://192.168.7.115/api/v1/uploadface/profile/" + photoname.getText().toString();
+                    String urlAddress = "http://192.168.7.115/api/v1/uploadface/profile/" + personid.getText().toString();
                     URL url = new URL(urlAddress);
                     HttpURLConnection conn = (HttpURLConnection) url.openConnection();
                     conn.setRequestMethod("POST");
@@ -317,6 +349,153 @@ public class DetectActivity extends AppCompatActivity {
         });
 
         thread.start();
+    }
+
+    //TODO POST MULTIPART IMAGE REQUEST
+
+    public String multipartRequest(String urlTo, Map<String, String> parmas, String filepath, String filefield, String fileMimeType){
+        HttpURLConnection connection = null;
+        DataOutputStream outputStream = null;
+        InputStream inputStream = null;
+
+        String twoHyphens = "--";
+        String boundary = "*****" + Long.toString(System.currentTimeMillis()) + "*****";
+        String lineEnd = "\r\n";
+
+        String result = "";
+
+        int bytesRead, bytesAvailable, bufferSize;
+        byte[] buffer;
+        int maxBufferSize = 1 * 1024 * 1024;
+
+        String[] q = filepath.split("/");
+        int idx = q.length - 1;
+
+        try {
+            File file = new File(filepath);
+            FileInputStream fileInputStream = new FileInputStream(file);
+
+            URL url = new URL(urlTo);
+            connection = (HttpURLConnection) url.openConnection();
+
+            connection.setDoInput(true);
+            connection.setDoOutput(true);
+            connection.setUseCaches(false);
+
+            connection.setRequestMethod("POST");
+            connection.setRequestProperty("Connection", "Keep-Alive");
+            connection.setRequestProperty("User-Agent", "Android Multipart HTTP Client 1.0");
+            connection.setRequestProperty("Content-Type", "multipart/form-data; boundary=" + boundary);
+
+            outputStream = new DataOutputStream(connection.getOutputStream());
+            outputStream.writeBytes(twoHyphens + boundary + lineEnd);
+            outputStream.writeBytes("Content-Disposition: form-data; name=\"" + filefield + "\"; filename=\"" + q[idx] + "\"" + lineEnd);
+            outputStream.writeBytes("Content-Type: " + fileMimeType + lineEnd);
+            outputStream.writeBytes("Content-Transfer-Encoding: binary" + lineEnd);
+
+            outputStream.writeBytes(lineEnd);
+
+            bytesAvailable = fileInputStream.available();
+            bufferSize = Math.min(bytesAvailable, maxBufferSize);
+            buffer = new byte[bufferSize];
+
+            bytesRead = fileInputStream.read(buffer, 0, bufferSize);
+            while (bytesRead > 0) {
+                outputStream.write(buffer, 0, bufferSize);
+                bytesAvailable = fileInputStream.available();
+                bufferSize = Math.min(bytesAvailable, maxBufferSize);
+                bytesRead = fileInputStream.read(buffer, 0, bufferSize);
+            }
+
+            outputStream.writeBytes(lineEnd);
+
+            // Upload POST Data
+            Iterator<String> keys = parmas.keySet().iterator();
+            while (keys.hasNext()) {
+                String key = keys.next();
+                String value = parmas.get(key);
+
+                outputStream.writeBytes(twoHyphens + boundary + lineEnd);
+                outputStream.writeBytes("Content-Disposition: form-data; name=\"" + key + "\"" + lineEnd);
+                outputStream.writeBytes("Content-Type: text/plain" + lineEnd);
+                outputStream.writeBytes(lineEnd);
+                outputStream.writeBytes(value);
+                outputStream.writeBytes(lineEnd);
+            }
+
+            outputStream.writeBytes(twoHyphens + boundary + twoHyphens + lineEnd);
+
+
+            if (200 != connection.getResponseCode()) {
+               throw new Exception("Failed to upload code:" + connection.getResponseCode() + " " + connection.getResponseMessage());
+            }
+
+            inputStream = connection.getInputStream();
+
+            result = this.convertStreamToString(inputStream);
+
+            fileInputStream.close();
+            inputStream.close();
+            outputStream.flush();
+            outputStream.close();
+
+            return result;
+
+        } catch (Exception e) {
+           // logger.error(e);
+            e.printStackTrace();
+        }
+        return result;
+    }
+
+    private String convertStreamToString(InputStream is) {
+        BufferedReader reader = new BufferedReader(new InputStreamReader(is));
+        StringBuilder sb = new StringBuilder();
+
+        String line = null;
+        try {
+            while ((line = reader.readLine()) != null) {
+                sb.append(line);
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        } finally {
+            try {
+                is.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+        return sb.toString();
+    }
+
+
+    private String saveToInternalStorage(Bitmap bitmapImage){
+        ContextWrapper cw = new ContextWrapper(getApplicationContext());
+        // path to /data/data/yourapp/app_data/imageDir
+        //
+        // File directory = cw.getDir("", Context.MODE_PRIVATE);
+        // Create imageDir
+
+        File file = cw.getDir("",MODE_PRIVATE);
+
+        File mypath=new File(file,"noice.jpg");
+
+        FileOutputStream fos = null;
+        try {
+            fos = new FileOutputStream(mypath);
+            // Use the compress method on the BitMap object to write image to the OutputStream
+            bitmapImage.compress(Bitmap.CompressFormat.PNG, 100, fos);
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            try {
+                fos.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+        return file.getAbsolutePath();
     }
 
 
