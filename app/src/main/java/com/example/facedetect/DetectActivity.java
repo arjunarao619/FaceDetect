@@ -8,6 +8,7 @@ import android.content.Intent;
 
 
 import android.graphics.BitmapFactory;
+import android.os.AsyncTask;
 import android.os.Bundle;
 
 import android.app.AlertDialog;
@@ -19,6 +20,7 @@ import android.graphics.Paint;
 import android.graphics.RectF;
 import android.graphics.drawable.BitmapDrawable;
 import android.os.Bundle;
+import android.os.Debug;
 import android.provider.MediaStore;
 import android.util.Log;
 import android.util.SparseArray;
@@ -42,6 +44,7 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.BufferedInputStream;
 import java.io.BufferedReader;
 import java.io.DataOutputStream;
 import java.io.File;
@@ -54,6 +57,7 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
 
@@ -67,6 +71,15 @@ public class DetectActivity extends AppCompatActivity {
     float xpos,ypos,width,height;
     EditText personid;
     String savedImagePath;
+    Bitmap uploadImage;
+
+    //remove if not working
+    String attachmentName = "bitmap";
+    String attachmentFileName = "bitmap.bmp";
+    String crlf = "\r\n";
+    String twoHyphens = "--";
+    String boundary =  "*****";
+    //#########
 
 
     static final int REQUEST_IMAGE_CAPTURE = 1;
@@ -108,7 +121,7 @@ public class DetectActivity extends AppCompatActivity {
 
         if(requestCode == Camera.REQUEST_TAKE_PHOTO){
             Bitmap myBitmap = camera.getCameraBitmap();
-            Bitmap uploadImage = myBitmap; //test
+            uploadImage = myBitmap; //test
 
             if(myBitmap != null) {
 
@@ -168,7 +181,7 @@ public class DetectActivity extends AppCompatActivity {
             }else{
                 Toast.makeText(this.getApplicationContext(),"Picture not taken!", Toast.LENGTH_SHORT).show();
             }
-            //TODO CALL POST FOR IMAGE TO BACKEND
+
 
         }
     }
@@ -245,17 +258,8 @@ public class DetectActivity extends AppCompatActivity {
                     faceContour.put(face_contour);
                     faceContour.put(face_contour2);
 
-
-                    /*JSONObject facecontour = new JSONObject();
-                    try{
-                    facecontour.put("face_contour",faceContour);}
-                    catch (JSONException e){
-                        e.printStackTrace();
-                    }*/
-
                     JSONObject landmark_vector = new JSONObject();
                     try{
-
 
                         landmark_vector.put("face_contour",faceContour);
                         landmark_vector.put("outer_lips",new JSONArray());
@@ -286,6 +290,81 @@ public class DetectActivity extends AppCompatActivity {
             });
 
             builder.show();
+
+            //todo send post here!!!
+            //AS OF NOW, NETWORK OPERATIONS TAKE PLACE ON THE MAIN THREAD
+
+            try {
+
+                HttpURLConnection httpUrlConnection = null;
+                URL url = new URL("https://node90.xyz/api/v1/uploadface/image/" + personid.getText().toString());
+                Toast.makeText(DetectActivity.this,personid.getText().toString(),Toast.LENGTH_LONG).show();
+
+                httpUrlConnection = (HttpURLConnection) url.openConnection();
+                httpUrlConnection.setUseCaches(false);
+                httpUrlConnection.setDoOutput(true);
+                httpUrlConnection.setRequestMethod("POST");
+
+                httpUrlConnection.setRequestProperty("Connection", "Keep-Alive");
+                httpUrlConnection.setRequestProperty("Cache-Control", "no-cache");
+                httpUrlConnection.setRequestProperty(
+                        "Content-Type", "multipart/form-data;boundary=" + this.boundary);
+
+
+                DataOutputStream request = new DataOutputStream(
+                        httpUrlConnection.getOutputStream());
+
+                request.writeBytes(this.twoHyphens + this.boundary + this.crlf);
+                request.writeBytes("Content-Disposition: form-data; name=\"" +
+                        this.attachmentName + "\";filename=\"" +
+                        this.attachmentFileName + "\"" + this.crlf);
+                request.writeBytes(this.crlf);
+
+                byte[] pixels = new byte[uploadImage.getWidth() * uploadImage.getHeight()];
+                for (int i = 0; i < uploadImage.getWidth(); ++i) {
+                    for (int j = 0; j < uploadImage.getHeight(); ++j) {
+                        //we're interested only in the MSB of the first byte,
+                        //since the other 3 bytes are identical for B&W images
+                        pixels[i + j] = (byte) ((uploadImage.getPixel(i, j) & 0x80) >> 7);
+                    }
+                }
+
+                request.write(pixels);
+
+                request.writeBytes(this.crlf);
+                request.writeBytes(this.twoHyphens + this.boundary +
+                        this.twoHyphens + this.crlf);
+
+                request.flush();
+                request.close();
+
+                InputStream responseStream = new
+                        BufferedInputStream(httpUrlConnection.getInputStream());
+
+                BufferedReader responseStreamReader =
+                        new BufferedReader(new InputStreamReader(responseStream));
+
+                String line = "";
+                StringBuilder stringBuilder = new StringBuilder();
+
+                while ((line = responseStreamReader.readLine()) != null) {
+                    stringBuilder.append(line).append("\n");
+                }
+                responseStreamReader.close();
+
+                String response = stringBuilder.toString();
+                Toast.makeText(DetectActivity.this,response,Toast.LENGTH_LONG).show();
+
+                responseStream.close();
+
+                httpUrlConnection.disconnect();
+
+
+            }
+            catch (Exception e){
+                e.printStackTrace();
+            }
+
         }
         return super.onOptionsItemSelected(item);
     }
@@ -330,5 +409,7 @@ public class DetectActivity extends AppCompatActivity {
     }
 
     //TODO POST MULTIPART IMAGE REQUEST
+
+
 
 }

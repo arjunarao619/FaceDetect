@@ -30,7 +30,7 @@ dependencies {
     implementation 'com.github.bumptech.glide:glide:4.9.0'
     androidTestImplementation 'androidx.test:runner:1.2.0'
     implementation 'com.google.android.gms:play-services-vision:18.0.0'
-
+    implementation "com.android.support:support-v4:10.0.+"
 
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.2.0'
     implementation 'com.mindorks:paracamera:0.2.2'
