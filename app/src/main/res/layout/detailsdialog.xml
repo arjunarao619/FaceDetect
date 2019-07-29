@@ -16,15 +16,12 @@
             android:layout_height="wrap_content"
             android:hint="Person Name"
             android:paddingTop="30dp" />
-        <EditText
+        <!--<EditText
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:hint="Person ID"
             android:paddingTop="30dp"
-            android:id = "@+id/personid"/>
-
-
-
+            android:id = "@+id/personid"/>-->
         <!--<EditText
             android:id="@+id/photoname"
             android:layout_width="match_parent"
@@ -32,15 +29,13 @@
             android:hint="Photo Name"
             android:paddingTop="30dp" />-->
 
-        <!--<EditText
+        <EditText
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:id = "@+id/photourl"
-            android:hint="Photo URL"
-            android:text="http://192.168.7.115/api/v1/showface/image/"
-            android:paddingTop="30dp" />-->
-
-
+            android:hint="Default URL: http://192.168.7.115/api/v1/showface/image/"
+            android:text=""
+            android:paddingTop="30dp" />
     </LinearLayout>
 
 

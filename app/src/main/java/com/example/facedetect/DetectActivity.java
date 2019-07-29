@@ -79,18 +79,12 @@ public class DetectActivity extends AppCompatActivity {
     Camera camera;
     float xpos,ypos,width,height;
     EditText personid;
+    String personurl_string;
     private static String TAG = "DetectActivity";
     String savedImagePath;
     Bitmap uploadImage;
     JSONObject json;
-
-    //remove if not working
-    String attachmentName = "bitmap";
-    String attachmentFileName = "bitmap.bmp";
-    String crlf = "\r\n";
-    String twoHyphens = "--";
-    String boundary =  "*****";
-    //#########
+    String personid_string;
 
 
     static final int REQUEST_IMAGE_CAPTURE = 1;
@@ -222,16 +216,27 @@ public class DetectActivity extends AppCompatActivity {
                 public void onClick(DialogInterface dialogInterface, int i) {
 
                     EditText personname = customLayout.findViewById(R.id.personname);
+
+                    personid_string = personname.getText().toString().replaceAll("\\s+","");
+
+                    EditText personurl = customLayout.findViewById(R.id.photourl);
+                    if(personurl.getText().toString().equals("")){
+                        personurl_string = "http://192.168.7.115/api/v1/showface/image/nourl/" + personid_string + "/";
+                    }
+                    else personurl_string = personurl.getText().toString();
+
                     //photoname = customLayout.findViewById(R.id.photoname);
                     //EditText photourl = customLayout.findViewById(R.id.photourl);
-                    personid = customLayout.findViewById(R.id.personid);
+                    //  personid = customLayout.findViewById(R.id.personid);
+
+
                     json = new JSONObject();
                     try {
 
                         json.put("person_name", personname.getText().toString());
-                        json.put("person_id", personid.getText().toString());
-                        json.put("photo_name", personid.getText().toString());
-                        json.put("photo_url", "http://192.168.7.115/api/v1/showface/image/" + personid.getText().toString());
+                        json.put("person_id", personid_string);
+                        json.put("photo_name", personid_string);
+                        json.put("photo_url", personurl_string);
 
                     }catch (JSONException e){
                         e.printStackTrace();
@@ -252,48 +257,7 @@ public class DetectActivity extends AppCompatActivity {
                         e.printStackTrace();
                     }
 
-                   /* *//*JSONObject face_contour = new JSONObject();
-                    try{
-                        face_contour.put("x",0.0);
-                        face_contour.put("y",0.0);
-                    }catch (JSONException e){
-                        e.printStackTrace();
-                    }
-
-                    JSONObject face_contour2 = new JSONObject();
-                    try{
-                        face_contour2.put("x",0.0);
-                        face_contour2.put("y",0.0);
-                    }catch (JSONException e){
-                        e.printStackTrace();
-                    }
-
-                    JSONArray faceContour = new JSONArray();
-                    faceContour.put(face_contour);
-                    faceContour.put(face_contour2);
-
-                    JSONObject landmark_vector = new JSONObject();
-                    try{
-
-                        landmark_vector.put("face_contour",faceContour);
-                        landmark_vector.put("outer_lips",new JSONArray());
-                        landmark_vector.put("inner_lips",new JSONArray());
-                        landmark_vector.put("left_eye",new JSONArray());
-                        landmark_vector.put("right_eye",new JSONArray());
-                        landmark_vector.put("left_pupil",new JSONArray());
-                        landmark_vector.put("right_pupil",new JSONArray());
-                        landmark_vector.put("left_eyebrow",new JSONArray());
-                        landmark_vector.put("right_eyebrow",new JSONArray());
-                        landmark_vector.put("nose",new JSONArray());
-                        landmark_vector.put("nose_crest",new JSONArray());
-                        landmark_vector.put("median_line",new JSONArray());
-
-                        json.put("landmark_vector",landmark_vector);*//*
-
-                    }catch(JSONException e){
-                        e.printStackTrace();
-                    }*/
-                    sendPost(json);
+                    sendPost(json); //FUNCTION CALL 1
 
                     File f = new File(getApplicationContext().getCacheDir(), "file.jpeg");
                     try {
@@ -308,7 +272,7 @@ public class DetectActivity extends AppCompatActivity {
                         fos.flush();
                         fos.close();
 
-                        postImage(f, personid.getText().toString()); //FUCNTION CALL 2
+                        postImage(f, personid_string); //FUCNTION CALL 2
 
                     }catch (Exception e){
                         e.printStackTrace();
@@ -327,14 +291,13 @@ public class DetectActivity extends AppCompatActivity {
         return super.onOptionsItemSelected(item);
     }
 
-
-    public void sendPost(final JSONObject json) {
+    public void sendPost(final JSONObject json) { //JSON object POST
 
         Thread thread = new Thread(new Runnable() {
             @Override
             public void run() {
                 try {
-                    String urlAddress = "http://192.168.7.115/api/v1/uploadface/profile/" + personid.getText().toString();
+                    String urlAddress = "http://192.168.7.115/api/v1/uploadface/profile/" + personid_string;
                     URL url = new URL(urlAddress);
                     HttpURLConnection conn = (HttpURLConnection) url.openConnection();
                     conn.setRequestMethod("POST");
@@ -371,8 +334,7 @@ public class DetectActivity extends AppCompatActivity {
 
 
 
-    public void postImage(File f,String id){
-
+    public void postImage(File f,String id){ //multipart request
 
         RequestParams params = new RequestParams();
         try {
@@ -386,7 +348,6 @@ public class DetectActivity extends AppCompatActivity {
             @Override
             public void onSuccess(int statusCode, cz.msebera.android.httpclient.Header[] headers, byte[] responseBody) {
                 Log.i("DetectActivity","!!!Success!!!");
-                //sendPost(json);
 
                 AlertDialog.Builder builder = new AlertDialog.Builder(DetectActivity.this);
                 builder.setTitle("Profile successfully sent!");
@@ -403,7 +364,15 @@ public class DetectActivity extends AppCompatActivity {
             public void onFailure(int statusCode, cz.msebera.android.httpclient.Header[] headers, byte[] responseBody, Throwable error) {
                 error.printStackTrace();
                 Log.i("DetectActivity","********Failure*********");
-                //Log.w("DetectActivity", Arrays.toString(responseBody));
+
+                AlertDialog.Builder builder = new AlertDialog.Builder(DetectActivity.this);
+                builder.setTitle("Failure");
+                builder.setMessage("Could not send your profile. Please check your network connection").setPositiveButton("OK", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialogInterface, int i) {
+                        dialogInterface.dismiss();
+                    }
+                }).show();
             }
 
         });
