@@ -6,6 +6,9 @@ import android.content.ContextWrapper;
 import android.content.DialogInterface;
 import android.content.Intent;
 
+import com.android.volley.Header;
+import com.loopj.android.http.*;
+
 
 import android.graphics.BitmapFactory;
 import android.os.AsyncTask;
@@ -38,6 +41,7 @@ import android.widget.Toast;
 import com.google.android.gms.vision.Frame;
 import com.google.android.gms.vision.face.Face;
 import com.google.android.gms.vision.face.FaceDetector;
+
 import com.mindorks.paracamera.Camera;
 
 import org.json.JSONArray;
@@ -46,20 +50,25 @@ import org.json.JSONObject;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedReader;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
+
 
 import static com.google.android.gms.vision.face.FaceDetector.ACCURATE_MODE;
 import static com.google.android.gms.vision.face.FaceDetector.ALL_CLASSIFICATIONS;
@@ -70,8 +79,10 @@ public class DetectActivity extends AppCompatActivity {
     Camera camera;
     float xpos,ypos,width,height;
     EditText personid;
+    private static String TAG = "DetectActivity";
     String savedImagePath;
     Bitmap uploadImage;
+    JSONObject json;
 
     //remove if not working
     String attachmentName = "bitmap";
@@ -101,8 +112,8 @@ public class DetectActivity extends AppCompatActivity {
                         .setDirectory("pics")
                         .setName("ali_" + System.currentTimeMillis())
                         .setImageFormat(Camera.IMAGE_JPEG)
-                        .setCompression(75)
-                        .setImageHeight(1000)// it will try to achieve this height as close as possible maintaining the aspect ratio;
+                        .setCompression(0)
+                       // .setImageHeight(1000)// it will try to achieve this height as close as possible maintaining the aspect ratio;
                         .build(DetectActivity.this);
 
                 try {
@@ -122,6 +133,7 @@ public class DetectActivity extends AppCompatActivity {
         if(requestCode == Camera.REQUEST_TAKE_PHOTO){
             Bitmap myBitmap = camera.getCameraBitmap();
             uploadImage = myBitmap; //test
+
 
             if(myBitmap != null) {
 
@@ -208,23 +220,23 @@ public class DetectActivity extends AppCompatActivity {
             builder.setPositiveButton("SEND", new DialogInterface.OnClickListener() {
                 @Override
                 public void onClick(DialogInterface dialogInterface, int i) {
+
                     EditText personname = customLayout.findViewById(R.id.personname);
                     //photoname = customLayout.findViewById(R.id.photoname);
                     //EditText photourl = customLayout.findViewById(R.id.photourl);
                     personid = customLayout.findViewById(R.id.personid);
+                    json = new JSONObject();
+                    try {
 
+                        json.put("person_name", personname.getText().toString());
+                        json.put("person_id", personid.getText().toString());
+                        json.put("photo_name", personid.getText().toString());
+                        json.put("photo_url", "http://192.168.7.115/api/v1/showface/image/" + personid.getText().toString());
 
-                    JSONObject json = new JSONObject();
-                    try{
-
-
-                        json.put("person_name",personname.getText().toString());
-                        json.put("person_id",personid.getText().toString());
-                        json.put("photo_name",personid.getText().toString());
-                        json.put("photo_url","http://192.168.7.115/api/v1/showface/image/" + personid.getText().toString());
-                    }catch(JSONException e){
+                    }catch (JSONException e){
                         e.printStackTrace();
                     }
+
 
                     JSONObject rectangle_vector = new JSONObject();
                     try{
@@ -234,11 +246,13 @@ public class DetectActivity extends AppCompatActivity {
                         rectangle_vector.put("height",height);
                         json.put("rectangle_vector",rectangle_vector);
 
+
+
                     }catch (JSONException e){
                         e.printStackTrace();
                     }
 
-                    JSONObject face_contour = new JSONObject();
+                   /* *//*JSONObject face_contour = new JSONObject();
                     try{
                         face_contour.put("x",0.0);
                         face_contour.put("y",0.0);
@@ -274,13 +288,32 @@ public class DetectActivity extends AppCompatActivity {
                         landmark_vector.put("nose_crest",new JSONArray());
                         landmark_vector.put("median_line",new JSONArray());
 
-                        json.put("landmark_vector",landmark_vector);
+                        json.put("landmark_vector",landmark_vector);*//*
 
                     }catch(JSONException e){
                         e.printStackTrace();
+                    }*/
+                    sendPost(json);
+
+                    File f = new File(getApplicationContext().getCacheDir(), "file.jpeg");
+                    try {
+                        f.createNewFile();
+
+                        ByteArrayOutputStream bos = new ByteArrayOutputStream();
+                        uploadImage.compress(Bitmap.CompressFormat.JPEG, 90 , bos);
+                        byte[] bitmapdata = bos.toByteArray();
+
+                        FileOutputStream fos = new FileOutputStream(f);
+                        fos.write(bitmapdata);
+                        fos.flush();
+                        fos.close();
+
+                        postImage(f, personid.getText().toString()); //FUCNTION CALL 2
+
+                    }catch (Exception e){
+                        e.printStackTrace();
                     }
 
-                    sendPost(json);
                 }
             }).setNegativeButton("CANCEL", new DialogInterface.OnClickListener() {
                 @Override
@@ -290,81 +323,6 @@ public class DetectActivity extends AppCompatActivity {
             });
 
             builder.show();
-
-            //todo send post here!!!
-            //AS OF NOW, NETWORK OPERATIONS TAKE PLACE ON THE MAIN THREAD
-
-            try {
-
-                HttpURLConnection httpUrlConnection = null;
-                URL url = new URL("https://node90.xyz/api/v1/uploadface/image/" + personid.getText().toString());
-                Toast.makeText(DetectActivity.this,personid.getText().toString(),Toast.LENGTH_LONG).show();
-
-                httpUrlConnection = (HttpURLConnection) url.openConnection();
-                httpUrlConnection.setUseCaches(false);
-                httpUrlConnection.setDoOutput(true);
-                httpUrlConnection.setRequestMethod("POST");
-
-                httpUrlConnection.setRequestProperty("Connection", "Keep-Alive");
-                httpUrlConnection.setRequestProperty("Cache-Control", "no-cache");
-                httpUrlConnection.setRequestProperty(
-                        "Content-Type", "multipart/form-data;boundary=" + this.boundary);
-
-
-                DataOutputStream request = new DataOutputStream(
-                        httpUrlConnection.getOutputStream());
-
-                request.writeBytes(this.twoHyphens + this.boundary + this.crlf);
-                request.writeBytes("Content-Disposition: form-data; name=\"" +
-                        this.attachmentName + "\";filename=\"" +
-                        this.attachmentFileName + "\"" + this.crlf);
-                request.writeBytes(this.crlf);
-
-                byte[] pixels = new byte[uploadImage.getWidth() * uploadImage.getHeight()];
-                for (int i = 0; i < uploadImage.getWidth(); ++i) {
-                    for (int j = 0; j < uploadImage.getHeight(); ++j) {
-                        //we're interested only in the MSB of the first byte,
-                        //since the other 3 bytes are identical for B&W images
-                        pixels[i + j] = (byte) ((uploadImage.getPixel(i, j) & 0x80) >> 7);
-                    }
-                }
-
-                request.write(pixels);
-
-                request.writeBytes(this.crlf);
-                request.writeBytes(this.twoHyphens + this.boundary +
-                        this.twoHyphens + this.crlf);
-
-                request.flush();
-                request.close();
-
-                InputStream responseStream = new
-                        BufferedInputStream(httpUrlConnection.getInputStream());
-
-                BufferedReader responseStreamReader =
-                        new BufferedReader(new InputStreamReader(responseStream));
-
-                String line = "";
-                StringBuilder stringBuilder = new StringBuilder();
-
-                while ((line = responseStreamReader.readLine()) != null) {
-                    stringBuilder.append(line).append("\n");
-                }
-                responseStreamReader.close();
-
-                String response = stringBuilder.toString();
-                Toast.makeText(DetectActivity.this,response,Toast.LENGTH_LONG).show();
-
-                responseStream.close();
-
-                httpUrlConnection.disconnect();
-
-
-            }
-            catch (Exception e){
-                e.printStackTrace();
-            }
-
         }
         return super.onOptionsItemSelected(item);
     }
@@ -387,6 +345,7 @@ public class DetectActivity extends AppCompatActivity {
 
 
 
+
                     Log.i("JSON", json.toString());
                     DataOutputStream os = new DataOutputStream(conn.getOutputStream());
                     //os.writeBytes(URLEncoder.encode(jsonParam.toString(), "UTF-8"));
@@ -399,6 +358,7 @@ public class DetectActivity extends AppCompatActivity {
                     Log.i("MSG" , conn.getResponseMessage());
 
                     conn.disconnect();
+
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
@@ -408,7 +368,48 @@ public class DetectActivity extends AppCompatActivity {
         thread.start();
     }
 
-    //TODO POST MULTIPART IMAGE REQUEST
+
+
+
+    public void postImage(File f,String id){
+
+
+        RequestParams params = new RequestParams();
+        try {
+            params.put("file", f);
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        }
+        AsyncHttpClient client = new AsyncHttpClient();
+        client.post("http://192.168.7.115/api/v1/uploadface/image/" + id, params, new AsyncHttpResponseHandler() {
+
+            @Override
+            public void onSuccess(int statusCode, cz.msebera.android.httpclient.Header[] headers, byte[] responseBody) {
+                Log.i("DetectActivity","!!!Success!!!");
+                //sendPost(json);
+
+                AlertDialog.Builder builder = new AlertDialog.Builder(DetectActivity.this);
+                builder.setTitle("Profile successfully sent!");
+                builder.setMessage("Successfully sent to FaceME API! Thank you!").setPositiveButton("OK", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialogInterface, int i) {
+                        dialogInterface.dismiss();
+                    }
+                }).show();
+
+            }
+
+            @Override
+            public void onFailure(int statusCode, cz.msebera.android.httpclient.Header[] headers, byte[] responseBody, Throwable error) {
+                error.printStackTrace();
+                Log.i("DetectActivity","********Failure*********");
+                //Log.w("DetectActivity", Arrays.toString(responseBody));
+            }
+
+        });
+    }
+
+
 
 
 
