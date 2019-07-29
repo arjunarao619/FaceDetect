@@ -25,15 +25,21 @@
         android:theme="@style/AppTheme"
         android:usesCleartextTraffic="true">
 
-        <activity android:name=".LoadImageActivity"></activity>
+        <activity android:name=".LoadImageActivity"
+            android:screenOrientation="portrait">
+
+        </activity>
 
         <meta-data
             android:name="com.google.firebase.ml.vision.DEPENDENCIES"
             android:value="face" />
 
-        <activity android:name=".ShowActivity" />
-        <activity android:name=".DetectActivity" />
-        <activity android:name=".MainActivity">
+        <activity android:name=".ShowActivity"
+            android:screenOrientation="portrait"/>
+        <activity android:name=".DetectActivity"
+            android:screenOrientation="portrait"/>
+        <activity android:name=".MainActivity"
+            android:screenOrientation="portrait">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 

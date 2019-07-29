@@ -10,7 +10,10 @@ import com.android.volley.Header;
 import com.loopj.android.http.*;
 
 
+import android.content.res.Resources;
 import android.graphics.BitmapFactory;
+import android.graphics.drawable.Drawable;
+import android.media.Image;
 import android.os.AsyncTask;
 import android.os.Bundle;
 
@@ -87,13 +90,13 @@ public class DetectActivity extends AppCompatActivity {
     String personid_string;
 
 
+
     static final int REQUEST_IMAGE_CAPTURE = 1;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_detect);
         Button btn = (Button) findViewById(R.id.btn);
-
         btn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -195,15 +198,36 @@ public class DetectActivity extends AppCompatActivity {
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         getMenuInflater().inflate(R.menu.menudetect, menu);
+       // menu.findItem(R.id.send).setEnabled(false);
         return super.onCreateOptionsMenu(menu);
+
+
+
     }
 
     // handle button activities
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
+
+
         int id = item.getItemId();
 
         if (id == R.id.send) {
+
+            /*res = getResources();
+
+            Drawable drawable = res.getDrawable(R.drawable.test);
+            ImageView faceimage = findViewById(R.id.test);
+
+            if(faceimage.getDrawable() == drawable){
+                AlertDialog.Builder builder = new AlertDialog.Builder(DetectActivity.this);
+                builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialogInterface, int i) {
+                        dialogInterface.dismiss();
+                    }
+                }).setTitle("Please Take a Picture before sending!").show();
+            }*/
 
             AlertDialog.Builder builder = new AlertDialog.Builder(this);
             builder.setTitle("POST Details");
@@ -221,7 +245,8 @@ public class DetectActivity extends AppCompatActivity {
 
                     EditText personurl = customLayout.findViewById(R.id.photourl);
                     if(personurl.getText().toString().equals("")){
-                        personurl_string = "http://192.168.7.115/api/v1/showface/image/nourl/" + personid_string + "/";
+                        Toast.makeText(DetectActivity.this,"rfneonwrnwi",Toast.LENGTH_LONG).show();
+                        personurl_string = "http://192.168.7.115/api/v1/showface/image/" + personid_string + "/";
                     }
                     else personurl_string = personurl.getText().toString();
 
@@ -343,7 +368,7 @@ public class DetectActivity extends AppCompatActivity {
             e.printStackTrace();
         }
         AsyncHttpClient client = new AsyncHttpClient();
-        client.post("http://192.168.7.115/api/v1/uploadface/image/" + id, params, new AsyncHttpResponseHandler() {
+        client.post("http://192.168.7.115/api/v1/uploadface/image/" + id , params, new AsyncHttpResponseHandler() {
 
             @Override
             public void onSuccess(int statusCode, cz.msebera.android.httpclient.Header[] headers, byte[] responseBody) {
@@ -367,7 +392,7 @@ public class DetectActivity extends AppCompatActivity {
 
                 AlertDialog.Builder builder = new AlertDialog.Builder(DetectActivity.this);
                 builder.setTitle("Failure");
-                builder.setMessage("Could not send your profile. Please check your network connection").setPositiveButton("OK", new DialogInterface.OnClickListener() {
+                builder.setMessage("Could not send your profile.").setPositiveButton("OK", new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialogInterface, int i) {
                         dialogInterface.dismiss();
