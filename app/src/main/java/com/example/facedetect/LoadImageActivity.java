@@ -33,10 +33,9 @@ public class LoadImageActivity extends AppCompatActivity {
         String message = intent.getStringExtra("ID");
 
 
-        final ImageView imageView = (ImageView) findViewById(R.id.load);
 
 
-        RequestQueue queue = Volley.newRequestQueue(this);
+        final ImageView imageView = findViewById(R.id.load);
         String url_image ="http://192.168.7.115/api/v1/showface/image/" + message;
         String url_text ="http://192.168.7.115/api/v1/showface/profile/" + message;
 

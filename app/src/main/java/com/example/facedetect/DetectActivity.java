@@ -1,6 +1,7 @@
 package com.example.facedetect;
 
 
+import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.ContextWrapper;
 import android.content.DialogInterface;
@@ -282,7 +283,8 @@ public class DetectActivity extends AppCompatActivity {
                         e.printStackTrace();
                     }
 
-                    sendPost(json); //FUNCTION CALL 1
+                    //sendPost(json); //FUNCTION CALL 1
+                    new SendJSON(DetectActivity.this).execute(); //TODO CHANGE IF NOT WORKING
 
                     File f = new File(getApplicationContext().getCacheDir(), "file.jpeg");
                     try {
@@ -316,7 +318,7 @@ public class DetectActivity extends AppCompatActivity {
         return super.onOptionsItemSelected(item);
     }
 
-    public void sendPost(final JSONObject json) { //JSON object POST
+  /*  public void sendPost(final JSONObject json) { //JSON object POST
 
         Thread thread = new Thread(new Runnable() {
             @Override
@@ -354,6 +356,65 @@ public class DetectActivity extends AppCompatActivity {
         });
 
         thread.start();
+    }*/
+
+    private class SendJSON extends AsyncTask<Void,Void,Void>{
+        private ProgressDialog progressDialog;
+
+        SendJSON(DetectActivity activity){
+            progressDialog = new ProgressDialog(activity);
+        }
+
+        @Override
+        protected void onPreExecute() {
+            progressDialog.setMessage("Sending information to backend...");
+            progressDialog.setTitle("Hold On!");
+            progressDialog.show();
+        }
+
+        @Override
+        protected Void doInBackground(Void... voids) {
+            try {
+
+                String urlAddress = "http://192.168.7.115/api/v1/uploadface/profile/" + personid_string;
+                URL url = new URL(urlAddress);
+                HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+                conn.setRequestMethod("POST");
+                conn.setRequestProperty("Content-Type", "application/json;charset=UTF-8");
+                conn.setRequestProperty("Accept","application/json");
+                conn.setDoOutput(true);
+                conn.setDoInput(true);
+
+
+
+
+                Log.i("JSON", json.toString());
+                DataOutputStream os = new DataOutputStream(conn.getOutputStream());
+                //os.writeBytes(URLEncoder.encode(jsonParam.toString(), "UTF-8"));
+                os.writeBytes(json.toString());
+
+                os.flush();
+                os.close();
+
+                Log.i("STATUS", String.valueOf(conn.getResponseCode()));
+                Log.i("MSG" , conn.getResponseMessage());
+
+                conn.disconnect();
+
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+
+            return null;
+        }
+
+        @Override
+        protected void onPostExecute(Void result) {
+            // do UI work here
+            if (progressDialog.isShowing()) {
+                progressDialog.dismiss();
+            }
+        }
     }
 
 
