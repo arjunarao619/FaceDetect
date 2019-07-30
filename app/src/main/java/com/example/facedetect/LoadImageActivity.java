@@ -44,5 +44,7 @@ public class LoadImageActivity extends AppCompatActivity {
         //Load the image
         Glide.with(LoadImageActivity.this).load(url_image).into(imageView);
 
+
+
     }
 }

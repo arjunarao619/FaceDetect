@@ -76,12 +76,12 @@ import java.util.concurrent.ExecutionException;
 
 import static com.google.android.gms.vision.face.FaceDetector.ACCURATE_MODE;
 import static com.google.android.gms.vision.face.FaceDetector.ALL_CLASSIFICATIONS;
-import static com.google.android.gms.vision.face.FaceDetector.FAST_MODE;
+
 
 public class DetectActivity extends AppCompatActivity {
 
     Camera camera;
-    float xpos,ypos,width,height;
+    double xpos,ypos,width,height;
     EditText personid;
     String personurl_string;
     private static String TAG = "DetectActivity";
@@ -90,9 +90,8 @@ public class DetectActivity extends AppCompatActivity {
     JSONObject json;
     String personid_string;
 
-
-
     static final int REQUEST_IMAGE_CAPTURE = 1;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -101,7 +100,6 @@ public class DetectActivity extends AppCompatActivity {
         btn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-
 
                 // Build the camera
                 camera = new Camera.Builder()
@@ -122,8 +120,6 @@ public class DetectActivity extends AppCompatActivity {
 
             }
         }); }
-
-
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
@@ -180,7 +176,7 @@ public class DetectActivity extends AppCompatActivity {
                      width = x2;
                      height = y2;
 
-                    tempCanvas.drawRoundRect(new RectF(x1, y1, x2, y2), 2, 2, myRectPaint);
+                     tempCanvas.drawRoundRect(new RectF(x1, y1, x2, y2), 2, 2, myRectPaint);
 
 
                 }
@@ -191,8 +187,6 @@ public class DetectActivity extends AppCompatActivity {
             }else{
                 Toast.makeText(this.getApplicationContext(),"Picture not taken!", Toast.LENGTH_SHORT).show();
             }
-
-
         }
     }
 
@@ -202,161 +196,129 @@ public class DetectActivity extends AppCompatActivity {
        // menu.findItem(R.id.send).setEnabled(false);
         return super.onCreateOptionsMenu(menu);
 
-
-
     }
 
     // handle button activities
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
 
-
         int id = item.getItemId();
 
         if (id == R.id.send) {
 
-            /*res = getResources();
+            Toast.makeText(DetectActivity.this,xpos + " " + + ypos + " " + width + " " + height,Toast.LENGTH_LONG).show();
 
-            Drawable drawable = res.getDrawable(R.drawable.test);
-            ImageView faceimage = findViewById(R.id.test);
+            if(xpos == 0.0 && ypos == 0.0 && width == 0.0 && height == 0.0){ //If no face is detected, dimensions are -1. Now displaying error message
+                AlertDialog.Builder builder1 = new AlertDialog.Builder(DetectActivity.this);
+                builder1.setTitle("No Face Detected!");
+                builder1.setMessage("Please retake the picture with a face present");
+                builder1.setPositiveButton("OK", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialogInterface, int i) {
+                        dialogInterface.dismiss();
+                        finish();
+                        startActivity(getIntent());
+                    }
+                }).show();
+            }
+            else{
 
-            if(faceimage.getDrawable() == drawable){
-                AlertDialog.Builder builder = new AlertDialog.Builder(DetectActivity.this);
-                builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
+                Resources res = getResources();
+
+                Drawable drawable = res.getDrawable(R.drawable.test);
+                ImageView faceimage = findViewById(R.id.test);
+
+                if(faceimage.getDrawable() == drawable){
+                    AlertDialog.Builder builder = new AlertDialog.Builder(DetectActivity.this);
+                    builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialogInterface, int i) {
+                            dialogInterface.dismiss();
+                        }
+                    }).setTitle("Please Take a Picture before sending!").show();
+                }
+
+                AlertDialog.Builder builder = new AlertDialog.Builder(this);
+                builder.setTitle("POST Details");
+                // set the custom layout
+                final View customLayout = getLayoutInflater().inflate(R.layout.detailsdialog, null);
+                builder.setView(customLayout);
+
+                builder.setPositiveButton("SEND", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialogInterface, int i) {
+
+                        EditText personname = customLayout.findViewById(R.id.personname);
+
+                        personid_string = personname.getText().toString().replaceAll("\\s+","");
+
+                        EditText personurl = customLayout.findViewById(R.id.photourl);
+                        if(personurl.getText().toString().equals("")){
+                            personurl_string = "http://192.168.7.115/api/v1/showface/image/" + personid_string + "/";
+                        }
+                        else personurl_string = personurl.getText().toString();
+
+                        json = new JSONObject();
+                        try {
+
+                            json.put("person_name", personname.getText().toString());
+                            json.put("person_id", personid_string);
+                            json.put("photo_name", personid_string);
+                            json.put("photo_url", personurl_string);
+
+                        }catch (JSONException e){
+                            e.printStackTrace();
+                        }
+                        JSONObject rectangle_vector = new JSONObject();
+                        try{
+                            rectangle_vector.put("x",xpos);
+                            rectangle_vector.put("y",ypos);
+                            rectangle_vector.put("width",width);
+                            rectangle_vector.put("height",height);
+                            json.put("rectangle_vector",rectangle_vector);
+
+                        }catch (JSONException e){
+                            e.printStackTrace();
+                        }
+
+                        //sendPost(json); //FUNCTION CALL 1
+                        new SendJSON(DetectActivity.this).execute();
+
+                        File f = new File(getApplicationContext().getCacheDir(), "file.jpeg");
+                        try {
+                            f.createNewFile();
+
+                            ByteArrayOutputStream bos = new ByteArrayOutputStream();
+                            uploadImage.compress(Bitmap.CompressFormat.JPEG, 90 , bos);
+                            byte[] bitmapdata = bos.toByteArray();
+
+                            FileOutputStream fos = new FileOutputStream(f);
+                            fos.write(bitmapdata);
+                            fos.flush();
+                            fos.close();
+
+                            postImage(f, personid_string); //FUCNTION CALL 2
+
+                        }catch (Exception e){
+                            e.printStackTrace();
+                        }
+
+                    }
+                }).setNegativeButton("CANCEL", new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialogInterface, int i) {
                         dialogInterface.dismiss();
                     }
-                }).setTitle("Please Take a Picture before sending!").show();
-            }*/
+                });
 
-            AlertDialog.Builder builder = new AlertDialog.Builder(this);
-            builder.setTitle("POST Details");
-            // set the custom layout
-            final View customLayout = getLayoutInflater().inflate(R.layout.detailsdialog, null);
-            builder.setView(customLayout);
+                builder.show();
 
-            builder.setPositiveButton("SEND", new DialogInterface.OnClickListener() {
-                @Override
-                public void onClick(DialogInterface dialogInterface, int i) {
-
-                    EditText personname = customLayout.findViewById(R.id.personname);
-
-                    personid_string = personname.getText().toString().replaceAll("\\s+","");
-
-                    EditText personurl = customLayout.findViewById(R.id.photourl);
-                    if(personurl.getText().toString().equals("")){
-                        Toast.makeText(DetectActivity.this,"rfneonwrnwi",Toast.LENGTH_LONG).show();
-                        personurl_string = "http://192.168.7.115/api/v1/showface/image/" + personid_string + "/";
-                    }
-                    else personurl_string = personurl.getText().toString();
-
-                    //photoname = customLayout.findViewById(R.id.photoname);
-                    //EditText photourl = customLayout.findViewById(R.id.photourl);
-                    //  personid = customLayout.findViewById(R.id.personid);
+            }
 
 
-                    json = new JSONObject();
-                    try {
-
-                        json.put("person_name", personname.getText().toString());
-                        json.put("person_id", personid_string);
-                        json.put("photo_name", personid_string);
-                        json.put("photo_url", personurl_string);
-
-                    }catch (JSONException e){
-                        e.printStackTrace();
-                    }
-
-
-                    JSONObject rectangle_vector = new JSONObject();
-                    try{
-                        rectangle_vector.put("x",xpos);
-                        rectangle_vector.put("y",ypos);
-                        rectangle_vector.put("width",width);
-                        rectangle_vector.put("height",height);
-                        json.put("rectangle_vector",rectangle_vector);
-
-
-
-                    }catch (JSONException e){
-                        e.printStackTrace();
-                    }
-
-                    //sendPost(json); //FUNCTION CALL 1
-                    new SendJSON(DetectActivity.this).execute(); //TODO CHANGE IF NOT WORKING
-
-                    File f = new File(getApplicationContext().getCacheDir(), "file.jpeg");
-                    try {
-                        f.createNewFile();
-
-                        ByteArrayOutputStream bos = new ByteArrayOutputStream();
-                        uploadImage.compress(Bitmap.CompressFormat.JPEG, 90 , bos);
-                        byte[] bitmapdata = bos.toByteArray();
-
-                        FileOutputStream fos = new FileOutputStream(f);
-                        fos.write(bitmapdata);
-                        fos.flush();
-                        fos.close();
-
-                        postImage(f, personid_string); //FUCNTION CALL 2
-
-                    }catch (Exception e){
-                        e.printStackTrace();
-                    }
-
-                }
-            }).setNegativeButton("CANCEL", new DialogInterface.OnClickListener() {
-                @Override
-                public void onClick(DialogInterface dialogInterface, int i) {
-                    dialogInterface.dismiss();
-                }
-            });
-
-            builder.show();
         }
         return super.onOptionsItemSelected(item);
     }
-
-  /*  public void sendPost(final JSONObject json) { //JSON object POST
-
-        Thread thread = new Thread(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    String urlAddress = "http://192.168.7.115/api/v1/uploadface/profile/" + personid_string;
-                    URL url = new URL(urlAddress);
-                    HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-                    conn.setRequestMethod("POST");
-                    conn.setRequestProperty("Content-Type", "application/json;charset=UTF-8");
-                    conn.setRequestProperty("Accept","application/json");
-                    conn.setDoOutput(true);
-                    conn.setDoInput(true);
-
-
-
-
-                    Log.i("JSON", json.toString());
-                    DataOutputStream os = new DataOutputStream(conn.getOutputStream());
-                    //os.writeBytes(URLEncoder.encode(jsonParam.toString(), "UTF-8"));
-                    os.writeBytes(json.toString());
-
-                    os.flush();
-                    os.close();
-
-                    Log.i("STATUS", String.valueOf(conn.getResponseCode()));
-                    Log.i("MSG" , conn.getResponseMessage());
-
-                    conn.disconnect();
-
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-            }
-        });
-
-        thread.start();
-    }*/
 
     private class SendJSON extends AsyncTask<Void,Void,Void>{
         private ProgressDialog progressDialog;
@@ -416,9 +378,6 @@ public class DetectActivity extends AppCompatActivity {
             }
         }
     }
-
-
-
 
     public void postImage(File f,String id){ //multipart request
 
