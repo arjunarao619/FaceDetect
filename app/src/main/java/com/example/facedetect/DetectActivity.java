@@ -206,8 +206,6 @@ public class DetectActivity extends AppCompatActivity {
 
         if (id == R.id.send) {
 
-            Toast.makeText(DetectActivity.this,xpos + " " + + ypos + " " + width + " " + height,Toast.LENGTH_LONG).show();
-
             if(xpos == 0.0 && ypos == 0.0 && width == 0.0 && height == 0.0){ //If no face is detected, dimensions are -1. Now displaying error message
                 AlertDialog.Builder builder1 = new AlertDialog.Builder(DetectActivity.this);
                 builder1.setTitle("No Face Detected!");
@@ -240,7 +238,7 @@ public class DetectActivity extends AppCompatActivity {
 
                 AlertDialog.Builder builder = new AlertDialog.Builder(this);
                 builder.setTitle("POST Details");
-                // set the custom layout
+
                 final View customLayout = getLayoutInflater().inflate(R.layout.detailsdialog, null);
                 builder.setView(customLayout);
 
