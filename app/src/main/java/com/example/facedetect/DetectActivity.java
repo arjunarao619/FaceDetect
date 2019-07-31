@@ -64,6 +64,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.Arrays;
@@ -87,10 +88,13 @@ public class DetectActivity extends AppCompatActivity {
     private static String TAG = "DetectActivity";
     String savedImagePath;
     Bitmap uploadImage;
+    EditText personname;
+    ProgressDialog progressDialog;
+    AsyncHttpClient client;
     JSONObject json;
     String personid_string;
 
-    static final int REQUEST_IMAGE_CAPTURE = 1;
+    //static final int REQUEST_IMAGE_CAPTURE = 1;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -108,7 +112,7 @@ public class DetectActivity extends AppCompatActivity {
                         .setDirectory("pics")
                         .setName("ali_" + System.currentTimeMillis())
                         .setImageFormat(Camera.IMAGE_JPEG)
-                        .setCompression(0)
+                        .setCompression(100)
                        // .setImageHeight(1000)// it will try to achieve this height as close as possible maintaining the aspect ratio;
                         .build(DetectActivity.this);
 
@@ -161,14 +165,6 @@ public class DetectActivity extends AppCompatActivity {
                     float y1 = thisFace.getPosition().y;
                     float x2 = x1 + thisFace.getWidth();
                     float y2 = y1 + thisFace.getHeight();
-                    float smile = thisFace.getIsSmilingProbability();
-                    float lefteye = thisFace.getIsLeftEyeOpenProbability();
-                    float righteye = thisFace.getIsRightEyeOpenProbability();
-
-
-                    TextView textView = findViewById(R.id.details);
-                    String details = "Smiling Probability: "+ smile + "\n   Right Eye Open Probability "+ righteye + "\n    Left Eye Open Probability: "+ lefteye;
-                    textView.setText(details);
 
                     //for POST
                      xpos = x1;
@@ -205,6 +201,7 @@ public class DetectActivity extends AppCompatActivity {
         int id = item.getItemId();
 
         if (id == R.id.send) {
+            Toast.makeText(DetectActivity.this,xpos + "" + ypos,Toast.LENGTH_LONG).show();
 
             if(xpos == 0.0 && ypos == 0.0 && width == 0.0 && height == 0.0){ //If no face is detected, dimensions are -1. Now displaying error message
                 AlertDialog.Builder builder1 = new AlertDialog.Builder(DetectActivity.this);
@@ -246,9 +243,13 @@ public class DetectActivity extends AppCompatActivity {
                     @Override
                     public void onClick(DialogInterface dialogInterface, int i) {
 
-                        EditText personname = customLayout.findViewById(R.id.personname);
+                        personname = customLayout.findViewById(R.id.personname);
 
                         personid_string = personname.getText().toString().replaceAll("\\s+","");
+
+                        if(personid_string.equals("")){
+                            personname.setError("Please enter a FaceID");
+                        }
 
                         EditText personurl = customLayout.findViewById(R.id.photourl);
                         if(personurl.getText().toString().equals("")){
@@ -279,15 +280,14 @@ public class DetectActivity extends AppCompatActivity {
                             e.printStackTrace();
                         }
 
-                        //sendPost(json); //FUNCTION CALL 1
-                        new SendJSON(DetectActivity.this).execute();
+                        new SendJSON().execute(); //CALLING THE ASYNCTASK
 
-                        File f = new File(getApplicationContext().getCacheDir(), "file.jpeg");
+                        File f = new File(getApplicationContext().getCacheDir(), "file.jpegg");
                         try {
                             f.createNewFile();
 
                             ByteArrayOutputStream bos = new ByteArrayOutputStream();
-                            uploadImage.compress(Bitmap.CompressFormat.JPEG, 90 , bos);
+                            uploadImage.compress(Bitmap.CompressFormat.JPEG, 0 , bos);
                             byte[] bitmapdata = bos.toByteArray();
 
                             FileOutputStream fos = new FileOutputStream(f);
@@ -312,24 +312,15 @@ public class DetectActivity extends AppCompatActivity {
                 builder.show();
 
             }
-
-
         }
         return super.onOptionsItemSelected(item);
     }
 
     private class SendJSON extends AsyncTask<Void,Void,Void>{
-        private ProgressDialog progressDialog;
-
-        SendJSON(DetectActivity activity){
-            progressDialog = new ProgressDialog(activity);
-        }
 
         @Override
         protected void onPreExecute() {
-            progressDialog.setMessage("Sending information to backend...");
-            progressDialog.setTitle("Hold On!");
-            progressDialog.show();
+
         }
 
         @Override
@@ -350,7 +341,6 @@ public class DetectActivity extends AppCompatActivity {
 
                 Log.i("JSON", json.toString());
                 DataOutputStream os = new DataOutputStream(conn.getOutputStream());
-                //os.writeBytes(URLEncoder.encode(jsonParam.toString(), "UTF-8"));
                 os.writeBytes(json.toString());
 
                 os.flush();
@@ -371,13 +361,17 @@ public class DetectActivity extends AppCompatActivity {
         @Override
         protected void onPostExecute(Void result) {
             // do UI work here
-            if (progressDialog.isShowing()) {
-                progressDialog.dismiss();
-            }
+
         }
     }
 
     public void postImage(File f,String id){ //multipart request
+
+        progressDialog = new ProgressDialog(DetectActivity.this);
+
+        progressDialog.setMessage("Sending information to backend...");
+        progressDialog.setTitle("Hold On!");
+        progressDialog.show();
 
         RequestParams params = new RequestParams();
         try {
@@ -385,16 +379,31 @@ public class DetectActivity extends AppCompatActivity {
         } catch (FileNotFoundException e) {
             e.printStackTrace();
         }
-        AsyncHttpClient client = new AsyncHttpClient();
+        client = new AsyncHttpClient();
+        client.setTimeout(5000);
+
+
         client.post("http://192.168.7.115/api/v1/uploadface/image/" + id , params, new AsyncHttpResponseHandler() {
+
 
             @Override
             public void onSuccess(int statusCode, cz.msebera.android.httpclient.Header[] headers, byte[] responseBody) {
                 Log.i("DetectActivity","!!!Success!!!");
+                String strr = "";
+                if (progressDialog.isShowing()) {
+                    progressDialog.dismiss();
+                }
+                try {
+                    strr = new String(responseBody, "UTF-8");
 
-                AlertDialog.Builder builder = new AlertDialog.Builder(DetectActivity.this);
+                }catch (UnsupportedEncodingException e){
+                    e.printStackTrace();
+                }
+
+
+                    AlertDialog.Builder builder = new AlertDialog.Builder(DetectActivity.this);
                 builder.setTitle("Profile successfully sent!");
-                builder.setMessage("Successfully sent to FaceME API! Thank you!").setPositiveButton("OK", new DialogInterface.OnClickListener() {
+                builder.setMessage("Successfully sent to FaceME API! Thank you!\n" + strr).setPositiveButton("OK", new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialogInterface, int i) {
                         dialogInterface.dismiss();
@@ -405,19 +414,76 @@ public class DetectActivity extends AppCompatActivity {
 
             @Override
             public void onFailure(int statusCode, cz.msebera.android.httpclient.Header[] headers, byte[] responseBody, Throwable error) {
+
                 error.printStackTrace();
+
+
+
                 Log.i("DetectActivity","********Failure*********");
+                if (progressDialog.isShowing()) {
+                    progressDialog.dismiss();
+                }
 
-                AlertDialog.Builder builder = new AlertDialog.Builder(DetectActivity.this);
-                builder.setTitle("Failure");
-                builder.setMessage("Could not send your profile.").setPositiveButton("OK", new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialogInterface, int i) {
-                        dialogInterface.dismiss();
+                if(personname.getText().toString().equals("")){
+                    AlertDialog.Builder builder = new AlertDialog.Builder(DetectActivity.this);
+                    builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialogInterface, int i) {
+                            dialogInterface.dismiss();
+                        }
+                    }).setTitle("Please enter a FaceID!").show();
+                }
+
+
+                else{
+                    try {
+
+                        AlertDialog.Builder builder = new AlertDialog.Builder(DetectActivity.this);
+                        builder.setTitle("Error");
+                        builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialogInterface, int i) {
+                                dialogInterface.dismiss();
+                            }
+                        });
+
+                        if(statusCode == 400){
+                            builder.setMessage("Bad request : Client error");
+                            builder.show();
+                        }
+
+                        else if(statusCode == 401){
+                            builder.setMessage("Authentication error. Please enter the correct credentials");
+                            builder.show();
+                        }
+                        else if(statusCode == 402){
+                            builder.setMessage("Payment Required");
+                            builder.show();
+                        }
+                        else if(statusCode == 403){
+                            builder.setMessage("Forbidden. Server refused action");
+                            builder.show();
+                        }
+                        else if(statusCode == 404){
+                            builder.setMessage("The resource you are trying to view could not be found");
+                            builder.show();
+                        }
+                        else if(statusCode == 405){
+                            builder.setMessage("Method not allowed!");
+                            builder.show();
+                        }
+                        else{
+                            builder.setMessage("Error : " + new String(responseBody,"UTF-8"));
+                            builder.show();
+                        }
+
+
+                    }catch (Exception e){
+                        e.printStackTrace();
                     }
-                }).show();
-            }
 
+                }
+            }
         });
     }
 
