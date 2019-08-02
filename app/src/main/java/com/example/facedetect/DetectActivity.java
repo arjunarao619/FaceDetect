@@ -112,8 +112,7 @@ public class DetectActivity extends AppCompatActivity {
                         .setDirectory("pics")
                         .setName("ali_" + System.currentTimeMillis())
                         .setImageFormat(Camera.IMAGE_JPEG)
-                        .setCompression(100)
-                       // .setImageHeight(1000)// it will try to achieve this height as close as possible maintaining the aspect ratio;
+                        .setCompression(40)
                         .build(DetectActivity.this);
 
                 try {
@@ -136,8 +135,6 @@ public class DetectActivity extends AppCompatActivity {
             if(myBitmap != null) {
 
                 final ImageView imageView2 = (ImageView) findViewById(R.id.test);
-
-                //imageView2.setImageBitmap(myBitmap);
                 Paint myRectPaint = new Paint();
                 myRectPaint.setStrokeWidth(5);
                 myRectPaint.setColor(Color.RED);
@@ -287,7 +284,7 @@ public class DetectActivity extends AppCompatActivity {
                             f.createNewFile();
 
                             ByteArrayOutputStream bos = new ByteArrayOutputStream();
-                            uploadImage.compress(Bitmap.CompressFormat.JPEG, 0 , bos);
+                            uploadImage.compress(Bitmap.CompressFormat.JPEG, 75 , bos);
                             byte[] bitmapdata = bos.toByteArray();
 
                             FileOutputStream fos = new FileOutputStream(f);
@@ -481,7 +478,6 @@ public class DetectActivity extends AppCompatActivity {
                     }catch (Exception e){
                         e.printStackTrace();
                     }
-
                 }
             }
         });

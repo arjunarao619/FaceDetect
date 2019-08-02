@@ -7,13 +7,19 @@
     tools:context=".LoadImageActivity">
 
     <ImageView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
+        android:layout_width="match_parent"
+        android:layout_height="600dp"
+        android:layout_alignParentTop="true"
         android:id = "@+id/load"
         />
+
     <TextView
+        android:id="@+id/faceid"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:id = "@+id/text"/>
+        android:layout_alignParentBottom="true"
+        android:layout_centerHorizontal="true"
+        android:layout_marginBottom="4dp"
+        android:textSize="30sp" />
 
 </RelativeLayout>
