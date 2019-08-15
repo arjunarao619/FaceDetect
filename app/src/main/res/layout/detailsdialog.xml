@@ -33,9 +33,18 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:id = "@+id/photourl"
-            android:hint="Default URL: http://192.168.7.115/api/v1/showface/image/"
+            android:hint="Default URL: http://192.168.7.115/api/v1/uploadface/profile/"
             android:text=""
             android:paddingTop="30dp" />
+
+        <EditText
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:id = "@+id/photourl_image"
+            android:hint="Default URL: http://192.168.7.115/api/v1/uploadface/image/"
+            android:text=""
+            android:paddingTop="30dp"
+            />
     </LinearLayout>
 
 

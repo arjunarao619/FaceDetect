@@ -84,7 +84,7 @@ public class DetectActivity extends AppCompatActivity {
     Camera camera;
     double xpos,ypos,width,height;
     EditText personid;
-    String personurl_string;
+    String personurl_string,personurl_image_string;
     private static String TAG = "DetectActivity";
     String savedImagePath;
     Bitmap uploadImage;
@@ -250,9 +250,15 @@ public class DetectActivity extends AppCompatActivity {
 
                         EditText personurl = customLayout.findViewById(R.id.photourl);
                         if(personurl.getText().toString().equals("")){
-                            personurl_string = "http://192.168.7.115/api/v1/showface/image/" + personid_string + "/";
+                            personurl_string = "http://192.168.7.219:23458/api/v1/uploadface/profile/" + personid_string;
                         }
                         else personurl_string = personurl.getText().toString();
+
+                        EditText personurl_image = customLayout.findViewById(R.id.photourl_image);
+                        if(personurl_image.getText().toString().equals("")){
+                            personurl_image_string = "http://192.168.7.219:23458/api/v1/uploadface/image/" + personid_string;
+                        }
+                        else personurl_image_string = personurl_image.getText().toString();
 
                         json = new JSONObject();
                         try {
@@ -279,7 +285,7 @@ public class DetectActivity extends AppCompatActivity {
 
                         new SendJSON().execute(); //CALLING THE ASYNCTASK
 
-                        File f = new File(getApplicationContext().getCacheDir(), "file.jpegg");
+                        File f = new File(getApplicationContext().getCacheDir(), "file.jpeg");
                         try {
                             f.createNewFile();
 
@@ -324,7 +330,8 @@ public class DetectActivity extends AppCompatActivity {
         protected Void doInBackground(Void... voids) {
             try {
 
-                String urlAddress = "http://192.168.7.115/api/v1/uploadface/profile/" + personid_string;
+               // String urlAddress = "http://192.168.7.115/api/v1/uploadface/profile/" + personid_string;
+                String urlAddress = personurl_string;
                 URL url = new URL(urlAddress);
                 HttpURLConnection conn = (HttpURLConnection) url.openConnection();
                 conn.setRequestMethod("POST");
@@ -380,7 +387,7 @@ public class DetectActivity extends AppCompatActivity {
         client.setTimeout(5000);
 
 
-        client.post("http://192.168.7.115/api/v1/uploadface/image/" + id , params, new AsyncHttpResponseHandler() {
+        client.post(personurl_image_string , params, new AsyncHttpResponseHandler() {
 
 
             @Override

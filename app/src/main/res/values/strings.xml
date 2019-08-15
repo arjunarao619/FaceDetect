@@ -3,4 +3,8 @@
     <string name="button1">Create Profile</string>
     <string name="button2">Show Profile</string>
     <string name="face_detection">Face Detection</string>
+
+    <string name="title_activity_spash_screen">SpashScreenActivity</string>
+    <string name="dummy_button">Dummy Button</string>
+    <string name="dummy_content">DUMMY\nCONTENT</string>
 </resources>
